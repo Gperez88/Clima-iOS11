@@ -20,6 +20,7 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
 
     //TODO: Declare instance variables here
     let locationManager = CLLocationManager()
+    let weatherDataModel = WeatherDataModel()
 
     
     //Pre-linked IBOutlets
@@ -36,6 +37,7 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
         locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
     
         
         
@@ -52,11 +54,9 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
             response in
             if response.result.isSuccess {
                 print("Success! Got the weather data")
-                
+                self.updateWeatherData(json: JSON(response.result.value!))
             } else {
-                if let error = response.result.error {
-                    print("Error \(error)")
-                }
+                print("Error \(response.result.error!)")
                 self.cityLabel.text = "Connection Issues"
             }
         }
@@ -72,8 +72,20 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
    
     
     //Write the updateWeatherData method here:
-    
-
+    func updateWeatherData(json: JSON) {
+        if let temp = json["main"]["temp"].double {
+            
+            weatherDataModel.temperature = Int(temp - 273.15)
+            weatherDataModel.city = json["name"].stringValue
+            weatherDataModel.condition = json["wether"][0]["id"].intValue
+            weatherDataModel.weatherIconName = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.condition)
+            
+            updateUIWithWeatherData()
+            
+        } else {
+            cityLabel.text = "Weather Unavailable"
+        }
+    }
     
     
     
@@ -82,7 +94,11 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
     
     
     //Write the updateUIWithWeatherData method here:
-    
+    func updateUIWithWeatherData() {
+        cityLabel.text = weatherDataModel.city
+        temperatureLabel.text = String(weatherDataModel.temperature)
+        weatherIcon.image = UIImage(named: weatherDataModel.weatherIconName)
+    }
     
     
     
